@@ -22,16 +22,20 @@ Suggested steps. Money stays in code (`lab8.tools.compute_compensation`).
 
 The model must not choose the refund amount and must not commit the refund.
 
-Trace contract v1 (docs/contracts.md): return a trace_path to a JSON file written in this run,
+Trace contract v1 (README): return a trace_path to a JSON file written in this run,
 {"run_id": <same run_id>, "events": [...]}, on every return path including early
 ones. `lab8.trace.Trace` does this; your own tracer is fine if it matches.
 """
 
 from __future__ import annotations
 
-from lab8.schemas import RunResult
-from lab8.shapes.common import not_implemented
+from lab8.db import connect 
+from lab8.durability import issue_refund 
+from lab8.schemas import Budget, RunResult, make_run_id 
+from lab8.shapes.common import finish 
+from lab8.tools import get_claim_view, lookup_order, compute_compensation, tool_cost 
 
+from lab8.trace import Trace 
 
 def run_claim(
     claim_id: str,
@@ -42,5 +46,101 @@ def run_claim(
 ) -> RunResult:
     # TODO CP2 (student): thay stub này bằng shape workflow theo các bước ở docstring đầu file.
     # TODO CP3 (student): truyền crash_at vào durability.issue_refund, không bắt InjectedCrash.
-    del store_path, crash_at
-    return not_implemented("workflow", claim_id, seed)
+    
+    conn = connect(store_path)
+    try:
+        return _run(conn, claim_id, seed=seed, crash_at=crash_at)
+    finally:
+        conn.close()
+
+def _run(conn, claim_id, *, seed, crash_at):
+    budget = Budget()
+    trace = Trace(make_run_id("workflow", claim_id, seed))
+    claim = get_claim_view(conn, claim_id)
+    budget.add_tool(tool_cost())
+
+    if not claim["found"]: 
+        return finish(
+            conn,
+            shape="workflow", 
+            claim_id=claim_id,
+            seed=seed,
+            status="failed",
+            proposal_amount=0,
+            budget=budget,
+            trace=trace,
+            error_reason="unknown_claim"
+        )
+
+    if not claim["order_id"]:
+        return finish(
+            conn,
+            claim_id=claim_id,
+            seed=seed,
+            shape="workflow",
+            status="needs_info",
+            proposal_amount=0,
+            budget=budget,
+            trace=trace,
+            error_reason="missing_order_id",
+        )
+
+    order_view = lookup_order(conn, claim["order_id"], claim["principal_id"])
+    budget.add_tool(tool_cost()) 
+    if not order_view["visible"]: 
+        return finish(
+            conn,
+            shape="workflow",
+            claim_id=claim_id,
+            seed=seed,
+            status="escalated",
+            proposal_amount=0,
+            budget=budget,
+            trace=trace,
+            error_reason=order_view["reason"],
+        )
+
+    quote_payload = compute_compensation(conn, order_view["order"])
+    budget.add_tool(tool_cost()) 
+    proposal = int(quote_payload["amount_vnd"])
+    if proposal <= 0: 
+        return finish(
+            conn,
+            shape="workflow",
+            claim_id=claim_id,
+            seed=seed,
+            status="denied",
+            proposal_amount=0,
+            budget=budget,
+            trace=trace,
+            error_reason=quote_payload["reason"]
+        )
+
+    outcome = issue_refund(conn, claim_id, proposal, crash_at=crash_at)
+    if not outcome["ok"]: 
+        if outcome["conflict"]:
+            status="failed"
+        else:
+            status="denied"
+        return finish(
+            conn,
+            shape="workflow",
+            claim_id=claim_id,
+            seed=seed,
+            status=status,
+            proposal_amount=proposal,
+            budget=budget,
+            trace=trace,
+            error_reason=outcome["reason"],
+        )
+    return finish(
+        conn,
+        shape="workflow",
+        claim_id=claim_id,
+        seed=seed,
+        status="resolved",
+        proposal_amount=proposal,
+        budget=budget,
+        trace=trace,
+        error_reason=None,
+    )
