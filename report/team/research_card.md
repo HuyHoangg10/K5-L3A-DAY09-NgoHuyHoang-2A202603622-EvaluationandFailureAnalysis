@@ -29,7 +29,7 @@ Phần này nối tiếp phần mini research ở buổi lý thuyết (slide 62�
 
 - Lệnh đã chạy (copy nguyên văn): `python -m lab8.benchmark --shapes workflow,orchestrator --cases data/public_claims.jsonl --seeds 11,22,33,44,55 --out reports/ablation_r1.json` (chạy trong `src/`)
 - Run id / file report: `src/reports/ablation_r1.json` (140 trial); ví dụ `R-workflow-C-010-s11`, `R-orchestrator-C-010-s11`
-- Kết quả so với hypothesis (đúng / sai / không kết luận được), kèm số liệu: **Đúng.** Pass rate 1.000 → 1.000, pass^5 1.000 → 1.000, seed variance 0 → 0 (không cải thiện độ đúng). Cost/success 27.86 → 47.23 VND mô phỏng (+69.5%); tool call trung bình 2.79 → 4.64; model call trung bình 0 → 0.86; mean steps 0 → 5.36 (workflow không ghi event vào trace nên steps = 0, không phải số bước thật)
+- Kết quả so với hypothesis (đúng / sai / không kết luận được), kèm số liệu: **Đúng.** Pass rate 1.000 → 1.000, pass^5 1.000 → 1.000, seed variance 0 → 0 (không cải thiện độ đúng). Cost/success 27.86 → 47.23 VND mô phỏng (+69.5%); tool call trung bình 2.79 → 4.64; model call trung bình 0 → 0.86; mean steps 3.43 → 5.36 (+56%), p95 steps 4 → 6. Investigator thêm khoảng 2 bước và 1.85 tool call mỗi trial mà không thêm trial pass nào
 - Giới hạn: MockLLM không phải model sản xuất, latency là `unavailable`.
 
 Muốn đi xa hơn một ablation để lấy điểm cộng thì xem [docs/bonus_topics.md](../../docs/bonus_topics.md).
