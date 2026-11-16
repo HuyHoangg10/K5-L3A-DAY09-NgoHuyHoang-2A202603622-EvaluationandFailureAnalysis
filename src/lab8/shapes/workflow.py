@@ -30,7 +30,7 @@ ones. `lab8.trace.Trace` does this; your own tracer is fine if it matches.
 from __future__ import annotations
 
 from lab8.db import connect 
-from lab8.durability import issue_refund 
+from lab8.durability import InjectedCrash, issue_refund 
 from lab8.schemas import Budget, RunResult, make_run_id 
 from lab8.shapes.common import finish 
 from lab8.tools import get_claim_view, lookup_order, compute_compensation, tool_cost 
@@ -58,6 +58,8 @@ def _run(conn, claim_id, *, seed, crash_at):
     trace = Trace(make_run_id("workflow", claim_id, seed))
     claim = get_claim_view(conn, claim_id)
     budget.add_tool(tool_cost())
+    # Trace: chỉ ghi field đã qua allowlist, không ghi ticket / secret / claim row thô.
+    trace.add("claim", {"found": bool(claim["found"]), "has_order_id": bool(claim.get("order_id"))})
 
     if not claim["found"]: 
         return finish(
@@ -87,6 +89,7 @@ def _run(conn, claim_id, *, seed, crash_at):
 
     order_view = lookup_order(conn, claim["order_id"], claim["principal_id"])
     budget.add_tool(tool_cost()) 
+    trace.add("order", {"visible": bool(order_view["visible"]), "reason": order_view["reason"]})
     if not order_view["visible"]: 
         return finish(
             conn,
@@ -103,6 +106,7 @@ def _run(conn, claim_id, *, seed, crash_at):
     quote_payload = compute_compensation(conn, order_view["order"])
     budget.add_tool(tool_cost()) 
     proposal = int(quote_payload["amount_vnd"])
+    trace.add("quote", {"amount_vnd": proposal, "reason": quote_payload["reason"], "clause_ids": quote_payload["clause_ids"]})
     if proposal <= 0: 
         return finish(
             conn,
@@ -116,7 +120,14 @@ def _run(conn, claim_id, *, seed, crash_at):
             error_reason=quote_payload["reason"]
         )
 
-    outcome = issue_refund(conn, claim_id, proposal, crash_at=crash_at)
+    try:
+        outcome = issue_refund(conn, claim_id, proposal, crash_at=crash_at)
+    except InjectedCrash:
+        # Ghi trace trước khi crash bay ra, rồi raise lại: không nuốt crash (T12).
+        trace.add("crash", {"at": crash_at})
+        trace.write()
+        raise
+    trace.add("host", {"ok": bool(outcome["ok"]), "reason": outcome["reason"]})
     if not outcome["ok"]: 
         if outcome["conflict"]:
             status="failed"
