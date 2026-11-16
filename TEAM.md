@@ -11,9 +11,9 @@
 
 | STT | Họ tên | MSSV | Email | GitHub | Vai trò |
 | --: | ------ | ---- | ----- | ------ | ------- |
-|   1 | Đỗ Minh Hiếu | 2A202603402 |       | minhiuss | Leader |
+|   1 | Đỗ Minh Hiếu | 2A202603402 |mhieudo11102@gmail.com       | minhiuss | Leader |
 |   2 | Ngô Huy Hoàng | 2A202603622 |nhh51204@gmail.com       | HuyHoangg10 | Thanh vien |
-|   3 | Nguyễn Văn Nhi | 2A202603697 |       | nguyenvannhi242 | Thanh vien |
+|   3 | Nguyễn Văn Nhi | 2A202603697 |nguyenvannhi224@gmail.com       | nguyenvannhi242 | Thanh vien |
 
 Gợi ý chia vai:
 
@@ -127,6 +127,38 @@ Sao chép mục dưới đây cho từng thành viên.
   - Cost per success: khoảng 31.45 VND mô phỏng
   - Mean steps: khoảng 4.64
 - Run id dẫn chứng: `R-single-C-001-s11`
+
+## 2A202603402_DoMinhHieu
+
+### Phần việc phụ trách
+
+- Shape A `workflow` (`src/lab8/shapes/workflow.py`) — shape nhóm chọn trong ADR.
+- Benchmark 4 shape và tự kiểm trên bộ hidden (`student_drop/`).
+- Tích hợp nhánh, ADR, bảng đóng góp và báo cáo nhóm (`group_report.md`).
+
+### Đóng góp cụ thể
+
+| Commit | Nội dung |
+| --- | --- |
+| `da9b8f2` | Shape A `workflow.py`: các bước cố định, tiền do `compute_compensation`, host ghi qua `issue_refund` |
+| `4ffd95f` | Thêm trace allowlist cho workflow (claim/order/quote/host/crash); chạy lại benchmark; self-check hidden |
+| `1e3ff52` | `src/tests/test_workflow_trace.py` (16 test) |
+
+- Test đã thêm: `src/tests/test_workflow_trace.py` — trace có event và chỉ thuộc allowlist, không lộ secret/ticket trên 14 claim; C-002 seed 55 vẫn `denied`; crash được ghi trace rồi ném lại.
+- Workflow không gọi MockLLM: không cần model để quyết định, cost thấp nhất (27.86 VND/success).
+- Truyền quote đầy đủ vào `issue_refund` để host tự trừ phần đã hoàn (T13, T14).
+- Không nuốt `InjectedCrash`: ghi event `crash`, `trace.write()`, rồi ném lại.
+- Trace chỉ ghi True/False, lý do và số tiền, không ghi ticket hay row thô.
+- Đề xuất chọn `workflow` trong ADR dựa trên benchmark cùng corpus, cùng seed.
+
+### Bằng chứng
+
+- `python -m pytest -q -m student -o addopts= -k workflow` → 62 passed.
+- `python -m pytest -q tests/test_workflow_trace.py` → 16 passed.
+- `src/reports/benchmark.json` (workflow): pass 1.000, pass^5 1.000, variance 0, cost/success 27.86 VND, steps 3.43; run id `R-workflow-C-001-s22`.
+- Benchmark chạy độc lập với Hoàng: 280/280 trial giống hệt.
+- `src/reports/hidden_selfcheck.json`: 600 trial, 0 error, 0 leak_suspect.
+- Báo cáo đầy đủ: `report/team/2A202603402_DoMinhHieu.md`.
 
 ## MSSV_HoTen
 
