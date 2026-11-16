@@ -12,7 +12,7 @@
 | STT | Họ tên | MSSV | Email | GitHub | Vai trò |
 | --: | ------ | ---- | ----- | ------ | ------- |
 |   1 | Đỗ Minh Hiếu | 2A202603402 |       | minhiuss | Leader |
-|   2 | Ngô Huy Hoàng | 2A202603622 |       | HuyHoangg10 | Thanh vien |
+|   2 | Ngô Huy Hoàng | 2A202603622 |nhh51204@gmail.com       | HuyHoangg10 | Thanh vien |
 |   3 | Nguyễn Văn Nhi | 2A202603697 |       | nguyenvannhi242 | Thanh vien |
 
 Gợi ý chia vai:
