@@ -51,7 +51,7 @@
 - Cổng host sau khi thêm test: `python -m pytest -q` → `78 passed`.
 - `python -m lab8.crash_test --count 20 --out reports/crash.json` → `crash_safety 20/20`.
 - `src/reports/benchmark.json` (shape `orchestrator`): pass rate 1.000, pass^5 1.000, seed variance 0, cost/success 47.23 VND mô phỏng; run id ví dụ `R-orchestrator-C-010-s11`.
-- Ablation R1 (`src/reports/ablation_r1.json`): workflow → orchestrator, pass rate 1.000 → 1.000, cost/success 27.86 → 47.23 VND (+69.5%), tool call trung bình 2.79 → 4.64.
+- Ablation R1 (`src/reports/ablation_r1.json`): workflow → orchestrator, pass rate 1.000 → 1.000, cost/success 27.86 → 47.23 VND (+69.5%), tool call trung bình 2.79 → 4.64, mean steps 3.43 → 5.36 (chạy lại sau khi workflow có trace).
 - `python -m lab8.check_submission`: `shape orchestrator: format đúng, 12/12 claim public pass ở seed 11`; `reports/crash.json: 20/20`; `research_card.md: đã điền đủ`.
 - Pull request: PR #2 (orchestrator), PR #3 (test, crash.json, research card) trên repo nhóm `minhiuss/K5-L3A-DAY08-ClaudeUltra-FromWorkflowsToAgents`.
 
@@ -71,5 +71,5 @@
   - Orchestrator tốn hơn workflow ~70% chi phí mô phỏng mà không tăng pass rate, nên không phải shape nhóm nên chọn cho task tuần tự này — đúng như ablation R1 cho thấy.
   - Kết luận chỉ đúng trên MockLLM và 14 claim public; latency là `unavailable`.
   - Dòng SOURCE trong research card còn thiếu URL paper.
-  - Số bước của workflow trong ablation bằng 0 vì `workflow.py` chưa ghi event vào trace, nên so sánh "steps" giữa A và C chưa công bằng.
+  - Ablation chỉ thay một biến (có/không investigator) trên 14 claim public; chưa thử nhiều investigator song song nên chưa kiểm được trực tiếp vế "task song song" của R1.
 - **Nếu làm lại:** thêm `lookup_refund_history` cho investigator và đo xem có giảm số lần host từ chối ở T13 không; thử tách nhiều investigator để kiểm tra trực tiếp giả thuyết scaling của R1.
