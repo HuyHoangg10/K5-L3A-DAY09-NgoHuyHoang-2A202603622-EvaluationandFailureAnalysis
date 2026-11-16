@@ -4,7 +4,7 @@
 
 - Họ tên: Nguyễn Văn Nhi
 - MSSV: 2A202603697
-- Email:
+- Email: nguyenvannhi224@gmail.com
 - GitHub: nguyenvannhi242 (tên tác giả commit: `hagasei`)
 
 ## 2. Phần việc phụ trách
